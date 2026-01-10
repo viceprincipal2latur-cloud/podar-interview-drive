@@ -180,12 +180,6 @@
             box-shadow: 0 6px 20px rgba(123, 45, 142, 0.3);
         }
 
-        .btn:disabled {
-            background: var(--text-light);
-            cursor: not-allowed;
-            transform: none;
-        }
-
         .btn-success {
             background: var(--success);
         }
@@ -202,36 +196,6 @@
             margin-bottom: 1.5rem;
             font-size: 0.95rem;
             color: #92400e;
-        }
-
-        .error-message {
-            background: #fee2e2;
-            border: 2px solid var(--danger);
-            color: #991b1b;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: var(--text-light);
-        }
-
-        .spinner {
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .candidate-details {
@@ -391,7 +355,7 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo-section">
-                   <img src="logo.jpeg" alt="Logo" width="60"> 
+                     <img src="logo.jpeg" alt="Logo" width="60"> alt="Podar Logo" class="logo">
                     <div class="school-info">
                         <h1>PODAR INTERNATIONAL SCHOOL</h1>
                         <p>Interview Drive - January 2026</p>
@@ -431,24 +395,17 @@
                 <h1>Enter Candidate Token</h1>
                 <p>Enter the candidate's token number to load their details</p>
 
-                <div id="errorDisplay" class="error-message" style="display: none;"></div>
-
                 <form id="tokenForm">
                     <div class="form-group">
                         <label for="candidateToken">Candidate Token Number <span class="required">*</span></label>
                         <input type="text" id="candidateToken" required placeholder="e.g., PISL001" pattern="PISL\d{3}">
                     </div>
-                    <button type="submit" class="btn" id="tokenBtn">Load Candidate Details</button>
+                    <button type="submit" class="btn">Load Candidate Details</button>
                 </form>
-
-                <div id="loadingDisplay" class="loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Loading candidate details from database...</p>
-                </div>
             </div>
         </div>
 
-        <!-- Evaluation Page -->
+        <!-- Evaluation Page (NO EXAM SCORES) -->
         <div id="evaluationPage" class="page">
             <div class="candidate-details">
                 <h2>Candidate Information</h2>
@@ -588,8 +545,6 @@
     </main>
 
     <script>
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjcOXBGxWdl3JTb0qI8B0r6X5AxJQj9LgxjgxZKcPZdL_3u1nmdkPSU0lOUQ8Ds68z/exec';
-        
         const passwords = {
             'ENG2026': 'English',
             'MATH2026': 'Maths',
@@ -629,60 +584,27 @@
         document.getElementById('tokenForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const token = document.getElementById('candidateToken').value.toUpperCase();
-            
-            if (!token.match(/^PISL\d{3}$/)) {
-                showError('Invalid token format. Token should be like PISL001');
-                return;
-            }
-            
             loadCandidateData(token);
         });
 
-        function showError(message) {
-            const errorDiv = document.getElementById('errorDisplay');
-            errorDiv.textContent = '❌ ' + message;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('errorDisplay').style.display = 'none';
-        }
-
         function loadCandidateData(token) {
-            hideError();
+            const storedToken = localStorage.getItem('candidateToken');
+            const storedName = localStorage.getItem('candidateName');
+            const storedPost = localStorage.getItem('candidatePost');
             
-            // Show loading
-            document.getElementById('tokenForm').style.display = 'none';
-            document.getElementById('loadingDisplay').style.display = 'block';
-            
-            // Call Google Apps Script to fetch data
-            const url = `${GOOGLE_SCRIPT_URL}?action=getCandidateByToken&token=${token}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.candidate) {
-                        currentCandidate = {
-                            token: data.candidate.tokenNumber,
-                            name: data.candidate.name,
-                            subject: data.candidate.postApplied,
-                            email: data.candidate.email
-                        };
-                        
-                        displayCandidateData();
-                        showPage('evaluationPage');
-                    } else {
-                        document.getElementById('tokenForm').style.display = 'block';
-                        document.getElementById('loadingDisplay').style.display = 'none';
-                        showError('Token number not found in our records. Please verify the token number.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('tokenForm').style.display = 'block';
-                    document.getElementById('loadingDisplay').style.display = 'none';
-                    showError('Unable to load candidate data. Please try again.');
-                });
+            if (storedToken === token) {
+                currentCandidate = {
+                    token: token,
+                    name: storedName || 'Test Candidate',
+                    subject: storedPost || 'PRT English',
+                    email: 'candidate@example.com'
+                };
+                
+                displayCandidateData();
+                showPage('evaluationPage');
+            } else {
+                alert('Token not found. Please verify the token number.');
+            }
         }
 
         function displayCandidateData() {
@@ -749,6 +671,8 @@
         }
 
         function sendToGoogleSheets(data) {
+            const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+            
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
